@@ -1,0 +1,5 @@
+Revision history for Perl extension Detect::Module.
+
+1.00  Sat Apr 28 23:50:01 2001
+	- original version; created by h2xs 1.20 with options
+		-A -c -n Detect::Module -X
