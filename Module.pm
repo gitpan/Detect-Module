@@ -27,7 +27,7 @@ require Exporter;
 @EXPORT = ();
 @EXPORT_OK = qw(Use Require NewRef Load);
 %EXPORT_TAGS = (standard => [@EXPORT_OK]);
-$VERSION = '1.1';
+$VERSION = '1.2';
 
 my $DEBUG = 0;
 
@@ -88,11 +88,26 @@ sub NewRef (@)
 sub Load (@)
 {
  my $name = Use @_;
+ $name or                                                  # new in 1.2
+  return undef;
  return bless sub ($$)
  {
   no strict 'refs';
   my $n = "${name}::$_[1]";
-  return undef if $_[0] eq 'CODECHECK' && !exists &$n;
+  if ($_[0] eq 'CODECHECK')                            # changed in 1.2
+  {
+   eval
+   q{
+    require 5.6.1;
+    return undef unless exists &$n;
+    1;
+   }
+   or do
+   {
+    return undef unless exists "${name}::"->{$_[1]};
+    # not perfect, but works with pre-5.6.1 versions.
+   }
+  }
   return \&$n if $_[0] eq 'CODE' || $_[0] eq 'CODECHECK';
   return \%$n if $_[0] eq 'HASH';
   return \@$n if $_[0] eq 'ARRAY';
@@ -197,7 +212,7 @@ There is a trick to catch cases where a module is _not_ found:
     }
 
 This relies upon the fact that a B<require 0> always succeeds. But this works
-B<only> with Use()/Require()!
+B<only> with Use(), Require() and Load()!
 
 =item B<NewRef @ModuleList>
 
@@ -243,6 +258,9 @@ is a synonym to GLOB.
 B<$o-E<gt>m(@args)> calls the function m() of the module with @args.
 
 =back
+
+B<CHANGED> since Detect::Module version 1.2: Load() now returns undef if
+no module was found and '0' was a possible name.
 
 =item B<Debug $Flag>
 
