@@ -27,7 +27,7 @@ require Exporter;
 @EXPORT = ();
 @EXPORT_OK = qw(Use Require NewRef Load);
 %EXPORT_TAGS = (standard => [@EXPORT_OK]);
-$VERSION = '1.0a';
+$VERSION = '1.1';
 
 my $DEBUG = 0;
 
@@ -73,7 +73,7 @@ sub Use (@)
 
 sub Require (@)
 {
- Use @_;
+ goto &Use;
 }
 
 sub NewRef (@)
@@ -152,9 +152,9 @@ one that can be loaded using require() is used.
 
 =head1 USAGE
 
-You may include Use(), Require() and NewRef() using the export tag
+You may include most functions using the export tag
 ':standard' like shown in the synopsis. Otherwise you call them like
-Detect::Module::Use(). Debug() and Reset() are never exported.
+Detect::Module::Use(). Only Debug() and Reset() cannot be exported.
 
 =over 4
 
@@ -173,7 +173,7 @@ compile-time execution, enclose the Use() call in a BEGIN block.
 The return value is the name of the module that has been loaded.
 
 Once loading a module has failed, it is never tried again. So using these
-subs multiple timed does not result in performance impacts (Perl checks
+subs multiple times does not result in performance impacts (Perl checks
 if a module is already loaded). But you should use this to access multiple
 functions of this package:
 
@@ -249,11 +249,6 @@ B<$o-E<gt>m(@args)> calls the function m() of the module with @args.
 Debugging output is switched on when $Flag is true. Debugging output is
 printed on STDERR and consists of lines like:
 
-=item B<Reset>
-
-Clears the hash %FAIL which contained all failed require() attempts. This may
-be useful when using mod_perl in Apache.
-
 =over 4
 
 =item *
@@ -266,6 +261,11 @@ B<'x; `rm -rf /` rejected - invalid characters'>
 B<the $@ contents after a failed require()>
 
 =back
+
+=item B<Reset>
+
+Clears the hash %FAIL which contained all failed require() attempts. This may
+be useful when using mod_perl in Apache.
 
 =back
 
