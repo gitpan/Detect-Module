@@ -1,5 +1,22 @@
 #!/usr/bin/perl -w
 
+#    Detect::Module - allows autodetection of Perl modules.
+#    Copyright (C) 2001  Rudolf Polzer
+#
+#    This library is free software; you can redistribute it and/or
+#    modify it under the terms of the GNU Library General Public
+#    License as published by the Free Software Foundation; either
+#    version 2 of the License, or (at your option) any later version.
+#
+#    This library is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#    Library General Public License for more details.
+#
+#    You should have received a copy of the GNU Library General Public
+#    License along with this library; if not, write to the Free
+#    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
 package Detect::Module;
 
 use strict;
@@ -10,7 +27,7 @@ require Exporter;
 @EXPORT = ();
 @EXPORT_OK = qw(Use Require NewRef Load);
 %EXPORT_TAGS = (standard => [@EXPORT_OK]);
-$VERSION = '1.0';
+$VERSION = '1.0a';
 
 my $DEBUG = 0;
 
@@ -20,6 +37,11 @@ sub Debug ($)
 }
 
 my %FAIL;
+
+sub Reset
+{
+ %FAIL = ();
+}
 
 sub Use (@)
 {
@@ -33,7 +55,7 @@ sub Use (@)
   }
   print STDERR "Trying $_\n"
    if $DEBUG;
-  if (/[^A-Za-z0-9_:]/)
+  if (/[^A-Za-z0-9\_\:\.]/)
   {
    print STDERR "$_ rejected - invalid characters\n"
     if $DEBUG;
@@ -132,7 +154,7 @@ one that can be loaded using require() is used.
 
 You may include Use(), Require() and NewRef() using the export tag
 ':standard' like shown in the synopsis. Otherwise you call them like
-Detect::Module::Use(). Debug() is never exported.
+Detect::Module::Use(). Debug() and Reset() are never exported.
 
 =over 4
 
@@ -149,6 +171,33 @@ There is no difference between Use() and Require(). To achieve
 compile-time execution, enclose the Use() call in a BEGIN block.
 
 The return value is the name of the module that has been loaded.
+
+Once loading a module has failed, it is never tried again. So using these
+subs multiple timed does not result in performance impacts (Perl checks
+if a module is already loaded). But you should use this to access multiple
+functions of this package:
+
+    # Load the module
+    my $mod = Use (...);
+    # I need the object:
+    my $obj = Load $mod;
+    # This does not have performance impacts because $mod is already
+    # loaded and Perl checks %INC!
+
+You can circumvent this behaviour by calling Detect::Module::Reset which
+clears the %FAIL-Cache.
+
+There is a trick to catch cases where a module is _not_ found:
+
+    # Try loading
+    unless (my $mod = Use (..., 0))
+    {
+     print "Module not found\n";
+     print "Using workaround instead...\n";
+    }
+
+This relies upon the fact that a B<require 0> always succeeds. But this works
+B<only> with Use()/Require()!
 
 =item B<NewRef @ModuleList>
 
@@ -200,6 +249,11 @@ B<$o-E<gt>m(@args)> calls the function m() of the module with @args.
 Debugging output is switched on when $Flag is true. Debugging output is
 printed on STDERR and consists of lines like:
 
+=item B<Reset>
+
+Clears the hash %FAIL which contained all failed require() attempts. This may
+be useful when using mod_perl in Apache.
+
 =over 4
 
 =item *
@@ -237,6 +291,13 @@ This makes accessing package variables harder, but not impossible.
 
 You cannot directly call AUTOLOAD() using the object returned by Load().
 Use B<$o-E<gt>(CODE =E<gt> 'AUTOLOAD')-E<gt>(@args)> instead.
+
+=item *
+
+When calling an undefined sub using the object returned by Load(), you can
+get error messages without line numbers and package names (so you do not know
+where the error occured). This only happens when you call the undefined sub
+from the main program, not from a sub.
 
 =back
 

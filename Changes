@@ -1,5 +1,9 @@
 Revision history for Perl extension Detect::Module.
 
-1.00  Sat Apr 28 23:50:01 2001
+1.0   Sat Apr 28 23:50:01 2001
 	- original version; created by h2xs 1.20 with options
 		-A -c -n Detect::Module -X
+1.0a  Fri May 5 09:22:00 2001
+        - improved the POD documentation
+	- added the GPL to this package
+	- added the %FAIL-Cache to improve performance

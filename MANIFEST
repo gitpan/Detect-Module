@@ -3,3 +3,4 @@ MANIFEST
 Makefile.PL
 Module.pm
 test.pl
+COPYING
